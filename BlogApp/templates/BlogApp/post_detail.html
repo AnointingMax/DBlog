@@ -1,0 +1,93 @@
+{% extends "BlogApp/template.html" %}
+{% block content %}
+{% load crispy_forms_tags %}
+<article class="media content-section">
+    <!-- <img src="{{ post.author.profile.image.url }}" class="rounded-circle article-img"> -->
+    <div class="media-body">
+        <div class="article-metadata">
+            <a class="mr-2" href="#">{{ post.author.username }}</a>
+            <small class="text-muted">{{ post.date_posted|timesince }} ago</small>
+            {% if post.author == user %}
+            <div>
+                <a href="{% url 'post-update' post.id %}" class="btn btn-secondary btn-sm my-1 mr-2">Update Post</a>
+                <a href="{% url 'post-delete' post.id %}" class="btn btn-danger btn-sm my-1">Delete Post</a>
+            </div>
+            {% endif %}
+        </div>
+        <h2 class="article-title">
+            {{ post.title }}
+        </h2>
+        {% if post.image.url is not null %}
+        <img src="{{post.image.url}}" style="width: 300px; height: auto" />
+        {% endif %}
+        <p class="article-content">{{ post.content }}</p>
+    </div>
+
+    <form action="{% url 'like-post' post.id %}" method="POST">
+        {% csrf_token %}
+
+        {% if post_is_liked %}
+        <button type="submit" name="blogpost_id" value="{{post.id}}" class="btn btn-info">Unlike</button>
+        {% else %}
+        <button type="submit" name="blogpost_id" value="{{post.id}}" class="btn btn-info">Like</button>
+        {% endif %}
+    </form>
+    <strong class="text-secondary">{{ number_of_likes }} Like{{ number_of_likes|pluralize }}</strong>
+
+    <div>
+        {% if comments|length > 0 %}
+        <h3 class="mt-5">Comment section</h3>
+        {% for comment in comments %}
+        <article class="media content-section">
+            <h5 class="text-muted">{{ comment.author.username }}</h5>
+            <p class="article-content">{{ comment.content }}</p>
+            <h6 class="text-muted">{{ comment.date_posted|timesince }} ago</h6>
+            <form action="{% url 'like-comment' post.id comment.id %}" method="POST">
+                {% csrf_token %}
+
+                {% if user in comment.likes %}
+                <button type="submit" value="{{comment.id}}" class="btn btn-info">Unlike</button>
+                {% else %}
+                <button type="submit" value="{{comment.id}}" class="btn btn-info">Like</button>
+                {% endif %}
+            </form>
+            <strong class="text-secondary">
+                {{ comment.number_of_likes }} Like{{comment.number_of_likes|pluralize}}
+            </strong>
+            <button onclick="showForm1()">Comment</button>
+            <form action="{% url 'add-comment' comment.id post.id %}" style="display: none;" id="form1" method="post"
+                enctype="multipart/form-data">
+                {% csrf_token %}
+                {{comm_form|crispy}}
+                <input type='hidden' value='comment' name='from'>
+                <div class="form-group">
+                    <button type="submit" class="btn btn-outline-info mb-2 mt-2">Comment</button>
+                </div>
+            </form>
+        </article>
+        {% endfor %}
+        {% else %}
+        <h3 class="mt-5">No comments yet</h3>
+        {% endif %}
+        <button onclick="showForm2()">Comment</button>
+        <form action="{% url 'add-comment' post.id post.id %}" id="form2" style="display: none;" method="post"
+            enctype="multipart/form-data">
+            {% csrf_token %}
+            {{comm_form|crispy}}
+            <input type='hidden' value='post' name='from'>
+            <div class="form-group">
+                <button type="submit" class="btn btn-outline-info mb-2 mt-2">Comment</button>
+            </div>
+        </form>
+    </div>
+
+</article>
+<script type="text/javascript">
+    function showForm1() {
+        document.getElementById('form1').style.display == 'none' ? document.getElementById('form1').style.display = 'block' : document.getElementById('form1').style.display = 'none'
+    }
+    function showForm2() {
+        document.getElementById('form2').style.display == 'none' ? document.getElementById('form2').style.display = 'block' : document.getElementById('form2').style.display = 'none'
+    }
+</script>
+{% endblock %}
